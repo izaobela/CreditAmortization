@@ -1,17 +1,11 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using ProjetoIntegrador.Application;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using ProjetoIntegrador.Repository;
 
 namespace ProjetoIntegrador
 {
@@ -27,6 +21,7 @@ namespace ProjetoIntegrador
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddScoped<IAmortizationService, AmortizationService>();
+            services.AddDbContext<AmortizationRepository>();
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
@@ -42,6 +37,11 @@ namespace ProjetoIntegrador
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "ProjetoIntegrador v1"));
             }
+
+            app.UseCors(builder => builder
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
 
             app.UseHttpsRedirection();
 

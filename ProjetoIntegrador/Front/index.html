@@ -1,0 +1,169 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Amortização</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="calculator">
+        <h1>Calculadora de Amortização</h1>
+        <form id="formPost">
+            <div class="form-group">
+                <label for="document">Documento:</label>
+                <input type="number" id="document" name="document" required>
+            </div>
+            <div class="form-group">
+                <label for="installmentsNumber">Número de Parcelas restantes:</label>
+                <input type="number" id="installmentsNumber" name="installmentsNumber" required>
+            </div>
+            <div class="form-group">
+                <label for="amortizationType">Tipo de Amortização:</label>
+                <select id="amortizationType" name="amortizationType">
+
+                    <option value="1">PRICE</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="cet">CET: (Juros Total Anual)</label>
+                <input type="number" id="cet" name="cet" required>
+            </div>
+            <div class="form-group">
+                <label for="balanceValue">Valor Restante a Pagar:</label>
+                <input type="text" id="balanceValue" name="balanceValue" required>
+            </div>
+            <div class="form-group">
+                <label for="amortizationValue">Valor da Amortização:</label>
+                <input type="text" id="amortizationValue" name="amortizationValue" required>
+            </div>
+            <button onclick="mostrarTabela()" type="submit">Calcular</button>
+            <button id="refreshButton">Limpar</button>
+        </form>
+
+        <div id="tableContainer"></div>
+    </div>
+
+    <script>IDBCursor
+        document.getElementById("refreshButton").addEventListener("click", function () {
+            location.reload();
+        });
+
+        document.querySelectorAll('input[type="text"]').forEach(function (input) {
+            input.addEventListener('input', function (event) {
+
+                var value = event.target.value.replace(/\D/g, '');
+                value = (parseInt(value) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                event.target.value = value;
+            });
+        });
+
+        function mostrarTabela() {
+            var outputDiv = document.getElementById("tableContainer");
+            outputDiv.innerHTML = ""; // Clear the div
+            document.getElementById("formPost").addEventListener("submit", function (event) {
+                event.preventDefault();
+
+                var formData = new FormData(this);
+                var jsonData = {};
+
+                formData.forEach(function (value, key) {
+                    value = value.replace(/[^\d,]/g, '');
+                    value = value.replace(',', '.');
+                    var number = parseFloat(value);
+                    jsonData[key] = number;
+                });
+
+
+                fetch("https://localhost:44310/Amortization", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(jsonData)
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error("Erro ao enviar o formulário.");
+                        }
+                        return response.text();
+                    })
+                    .then(data => {
+                        console.log("Resposta do servidor:", data);
+
+                        var xxx = JSON.parse(data);
+                        var json = jsonToHtml(xxx);
+
+                        var tableContainer = document.getElementById('tableContainer');
+
+                        tableContainer.appendChild(json );
+                    })
+                    .catch(error => {
+                        console.error("Erro:", error);
+                    });
+            });
+        }
+
+        function formatCurrency(value) {
+            return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function jsonToHtml(json) {
+            var table = document.createElement('table');
+            var thead = table.createTHead();
+            var tbody = table.createTBody();
+
+            // Custom header
+            var headerRow = thead.insertRow();
+            ['Documento', 'Numero de parcelas', 'Taxa Mensal', 'Valor', 'Descontos Ámort', 'Total Pago Amort'].forEach(function (headerText) {
+                var th = document.createElement('th');
+                th.appendChild(document.createTextNode(headerText));
+                headerRow.appendChild(th);
+            });
+
+            // Data row
+            var dataRow = tbody.insertRow();
+            ['document', 'installmentsNumber', 'cet', 'value', 'discounts', 'totalPaid'].forEach(function (key) {
+                var td = document.createElement('td');
+                var value = (key === 'value' || key === 'discounts' || key === 'totalPaid') ? formatCurrency(json[key]) : json[key];
+                td.appendChild(document.createTextNode(value));
+                dataRow.appendChild(td);
+            });
+
+            // Handle installments array separately
+            if (Array.isArray(json.installments)) {
+                json.installments.forEach(function (installment, index) {
+                    var subTable = document.createElement('table');
+                    var subThead = subTable.createTHead();
+                    var subTbody = subTable.createTBody();
+
+                    // Sub-table header
+                    var subHeaderRow = subThead.insertRow();
+                    ['Numero','Valor Com Amortização', 'Valor Parcela'].forEach(function (headerText) {
+                        var th = document.createElement('th');
+                        th.appendChild(document.createTextNode(headerText));
+                        subHeaderRow.appendChild(th);
+                    });
+
+                    // Sub-table data
+                    var subDataRow = subTbody.insertRow();
+                    ['number','value', 'valueWithFee'].forEach(function (key) {
+                        var td = document.createElement('td');
+                        var value = (key === 'value' || key === 'valueWithFee') ? formatCurrency(installment[key]) : installment[key];
+                        td.appendChild(document.createTextNode(value));
+                        subDataRow.appendChild(td);
+                    });
+
+                    // Append sub-table to main table
+                    var row = tbody.insertRow();
+                    var cell = row.insertCell();
+                    cell.colSpan = 7; // Assuming main table has 7 columns
+                    cell.appendChild(subTable);
+                });
+            }
+
+            return table;
+        }
+    </script>
+</body>
+</html>

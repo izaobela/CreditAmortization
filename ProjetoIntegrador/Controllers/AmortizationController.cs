@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ProjetoIntegrador.Application;
 using ProjetoIntegrador.Domain;
+using System.Threading.Tasks;
 
 namespace ProjetoIntegrador.Controllers
 {
@@ -19,10 +21,16 @@ namespace ProjetoIntegrador.Controllers
         }
 
         [HttpPost]
-        public Contract CalculateAmortization(AmortizationInput amortizationInput)
+        public async Task<Contract> CalculateAmortization(AmortizationInput amortizationInput)
         {
             _logger.LogInformation("Log de teste");
-            return _amortizationService.CalculateAmortization(amortizationInput);
+            return await _amortizationService.CalculateAmortization(amortizationInput);
+        }
+
+        [HttpGet]
+        public async Task<Contract> GetAmortization(long document)
+        {
+            return await _amortizationService.GetAmortization(document);
         }
     }
 }

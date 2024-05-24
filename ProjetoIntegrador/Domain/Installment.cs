@@ -1,8 +1,14 @@
-﻿namespace ProjetoIntegrador.Domain
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+
+namespace ProjetoIntegrador.Domain
 {
     public class Installment
     {
-        public decimal Value { get; set; }
+        [Key]
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public double Value { get; set; }
+        public double ValueWithFee { get; set; }
         public int Number { get; set; }
     }
 }
